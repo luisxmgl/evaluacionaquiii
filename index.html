@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETL Portafolio — Famosos & Lugares</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c15;--s1:#0f1520;--s2:#16202f;--s3:#1d2a3e;
+  --brd:#243352;--brd2:#2d3f5e;
+  --cyan:#06b6d4;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--purple:#8b5cf6;
+  --tx:#dde6f0;--tx2:#8ca0b8;--tx3:#4a5f7a;
+  --r:8px;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Outfit',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100vh;font-size:14px}
+
+.hdr{background:var(--s1);border-bottom:1px solid var(--brd);padding:14px 28px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.hdr-logo{font-family:var(--mono);font-size:11px;color:var(--cyan);font-weight:600;letter-spacing:.15em}
+.hdr-title{font-size:15px;font-weight:600}
+.hdr-sub{font-size:11px;color:var(--tx3);font-family:var(--mono)}
+.hdr-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+.main{padding:24px;max-width:1480px;margin:0 auto}
+
+.card{background:var(--s1);border:1px solid var(--brd);border-radius:var(--r);margin-bottom:18px}
+.card-hdr{padding:14px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-hdr h2{font-size:12px;font-weight:600;font-family:var(--mono);color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;display:flex;align-items:center;gap:8px}
+.card-hdr h2::before{content:'';width:4px;height:4px;background:var(--cyan);border-radius:50%;display:block}
+.card-body{padding:18px 20px}
+
+/* TERMINAL */
+.terminal{background:var(--bg);border-radius:6px;padding:16px;font-family:var(--mono);font-size:11.5px;line-height:1.85;max-height:360px;overflow-y:auto;border:1px solid var(--brd)}
+.terminal::-webkit-scrollbar{width:4px}.terminal::-webkit-scrollbar-thumb{background:var(--brd2)}
+.t-dim{color:var(--tx3)}.t-ok{color:var(--green)}.t-info{color:var(--cyan)}
+.t-warn{color:var(--amber)}.t-err{color:var(--red)}.t-pur{color:var(--purple)}
+.t-sep{color:var(--brd2)}
+.t-head{font-weight:600;color:var(--tx)}
+
+/* STATS */
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.sc{background:var(--s2);border:1px solid var(--brd);border-radius:6px;padding:10px 16px;min-width:110px;flex:1}
+.sc .sv{font-family:var(--mono);font-size:24px;font-weight:700;line-height:1}
+.sc .sk{font-size:10px;color:var(--tx3);margin-top:3px}
+.sc.ok .sv{color:var(--green)}.sc.info .sv{color:var(--cyan)}.sc.warn .sv{color:var(--amber)}.sc.err .sv{color:var(--red)}.sc.pur .sv{color:var(--purple)}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+.tbl-scroll{max-height:420px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--s2);font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);padding:9px 12px;text-align:left;border-bottom:1px solid var(--brd);position:sticky;top:0;z-index:2;white-space:nowrap}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--brd);color:var(--tx2);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--s2)}
+.td-id{font-family:var(--mono);font-size:10px;color:var(--tx3);width:40px}
+.td-mono{font-family:var(--mono);font-size:11px}
+
+/* BADGES */
+.badge{font-size:9px;font-family:var(--mono);padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap}
+.b-ok{background:rgba(16,185,129,.12);color:var(--green)}
+.b-warn{background:rgba(245,158,11,.12);color:var(--amber)}
+.b-err{background:rgba(239,68,68,.12);color:var(--red)}
+.b-info{background:rgba(6,182,212,.12);color:var(--cyan)}
+.b-pur{background:rgba(139,92,246,.12);color:var(--purple)}
+
+/* BUTTON */
+.btn{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-p{background:var(--cyan);color:#000}.btn-p:hover{background:#38bdf8}
+.btn-s{background:var(--s3);color:var(--tx);border:1px solid var(--brd)}.btn-s:hover{border-color:var(--cyan)}
+.btn-g{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.25)}.btn-g:hover{background:rgba(16,185,129,.22)}
+.btn-sm{padding:4px 9px;font-size:11px}
+
+/* TABS inside card */
+.itabs{display:flex;gap:0;border-bottom:1px solid var(--brd);padding:0 20px}
+.itabt{padding:10px 16px;font-size:12px;font-weight:500;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-family:var(--mono);white-space:nowrap}
+.itabt:hover{color:var(--tx)}.itabt.on{color:var(--cyan);border-bottom-color:var(--cyan)}
+.ipanel{display:none;padding:18px 20px}.ipanel.on{display:block}
+
+/* FILTER */
+.tbl-filter{padding:10px 20px;border-bottom:1px solid var(--brd)}
+.tbl-filter input{background:var(--s2);border:1px solid var(--brd);color:var(--tx);padding:7px 11px;border-radius:5px;font-family:var(--sans);font-size:12px;outline:none;width:100%;max-width:280px}
+.tbl-filter input:focus{border-color:var(--cyan)}
+
+/* UPLOAD ZONE */
+.upzone{border:2px dashed var(--brd);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;font-size:12px;color:var(--tx2)}
+.upzone:hover{border-color:var(--cyan);background:rgba(6,182,212,.04)}
+.upzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upzone .uz-name{font-family:var(--mono);font-size:11px;color:var(--cyan);margin-top:4px}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.g2{grid-template-columns:1fr}}
+.mt12{margin-top:12px}
+.flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.empty{text-align:center;padding:24px;color:var(--tx3);font-size:12px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-logo">▣ ETL ENGINE</div>
+  <div>
+    <div class="hdr-title">Portafolio — Famosos &amp; Lugares Históricos</div>
+    <div class="hdr-sub">Evaluación 2 · Arquitectura y Almacenamiento de Datos · INACAP Concepción-Talcahuano</div>
+  </div>
+  <div class="hdr-actions">
+    <span id="fechaHoy" style="font-family:var(--mono);font-size:11px;color:var(--tx3)"></span>
+    <button class="btn btn-g btn-sm" onclick="runETL()">▶ Re-ejecutar ETL</button>
+    <button class="btn btn-s btn-sm" onclick="exportDB()">↓ Exportar JSON</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- FILE UPLOAD OVERRIDE -->
+  <div class="card">
+    <div class="card-hdr">
+      <h2>Archivos de entrada</h2>
+      <span style="font-size:11px;color:var(--tx3)">Datos embebidos por defecto — carga archivos para sobreescribir</span>
+    </div>
+    <div class="card-body">
+      <div class="g2">
+        <div>
+          <div style="font-size:11px;color:var(--tx3);margin-bottom:6px;font-family:var(--mono)">DATOS2026-2.txt — Famosos</div>
+          <div class="upzone" id="uz1">
+            <input type="file" accept=".txt" onchange="loadCustomFile('famosos',this)">
+            📄 Arrastra o haz clic para cargar
+            <div class="uz-name" id="uz1name">Usando datos embebidos</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--tx3);margin-bottom:6px;font-family:var(--mono)">DATOS2026-3.TXT — Lugares</div>
+          <div class="upzone" id="uz2">
+            <input type="file" accept=".txt,.TXT" onchange="loadCustomFile('lugares',this)">
+            📄 Arrastra o haz clic para cargar
+            <div class="uz-name" id="uz2name">Usando datos embebidos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXECUTION LOG -->
+  <div class="card">
+    <div class="card-hdr">
+      <h2>Consola de ejecución</h2>
+      <div class="flex">
+        <span id="etlStatus" class="badge b-info">EN ESPERA</span>
+        <button class="btn btn-s btn-sm" onclick="document.getElementById('terminal').innerHTML=''">Limpiar</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:12px 16px">
+      <div class="terminal" id="terminal"><span class="t-dim">Iniciando ETL…</span></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="card">
+    <div class="card-hdr"><h2>Resumen / Reporte</h2></div>
+    <div class="card-body">
+      <div class="stats">
+        <div class="sc info"><div class="sv" id="rs-famTotal">—</div><div class="sk">Famosos leídos</div></div>
+        <div class="sc ok"><div class="sv" id="rs-famInsert">—</div><div class="sk">Famosos únicos</div></div>
+        <div class="sc warn"><div class="sv" id="rs-famDesc">—</div><div class="sk">Descartados/dup</div></div>
+        <div class="sc pur"><div class="sv" id="rs-cumple">—</div><div class="sk">Cumpleaños hoy</div></div>
+        <div class="sc info"><div class="sv" id="rs-lugares">—</div><div class="sk">Lugares únicos</div></div>
+        <div class="sc ok"><div class="sv" id="rs-dirs">—</div><div class="sk">Direcciones</div></div>
+        <div class="sc ok"><div class="sv" id="rs-georefs">—</div><div class="sk">Georeferencias</div></div>
+      </div>
+      <div id="cumpleBox" class="mt12" style="display:none">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--amber);margin-bottom:6px">🎂 CUMPLEAÑOS HOY</div>
+        <div id="cumpleList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLES -->
+  <div class="card">
+    <div class="itabs">
+      <div class="itabt on" onclick="switchITab('famosos')">📋 Tabla: Famosos</div>
+      <div class="itabt" onclick="switchITab('lugares')">📋 Tabla: Lugares</div>
+      <div class="itabt" onclick="switchITab('direcciones')">📋 Tabla: Direcciones</div>
+      <div class="itabt" onclick="switchITab('georefs')">📋 Tabla: Georeferencias</div>
+      <div class="itabt" onclick="switchITab('vista')">🔗 Vista consolidada</div>
+    </div>
+
+    <!-- FAMOSOS -->
+    <div class="ipanel on" id="ip-famosos">
+      <div class="tbl-filter"><input type="text" placeholder="Filtrar por nombre…" oninput="filterTable('famTbody','famFilter',this.value)"></div>
+      <div class="tbl-wrap tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>id</th><th>nombre</th><th>fecha_nacimiento (Chile)</th>
+            <th>edad</th><th>cumple_hoy</th>
+          </tr></thead>
+          <tbody id="famTbody"><tr><td colspan="5" class="empty">Ejecutando ETL…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LUGARES -->
+    <div class="ipanel" id="ip-lugares">
+      <div class="tbl-filter"><input type="text" placeholder="Filtrar por nombre…" oninput="filterTable('lugTbody','lugFilter',this.value)"></div>
+      <div class="tbl-wrap tbl-scroll">
+        <table>
+          <thead><tr><th>id</th><th>nombre</th></tr></thead>
+          <tbody id="lugTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DIRECCIONES -->
+    <div class="ipanel" id="ip-direcciones">
+      <div class="tbl-wrap tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>id</th><th>lugar_id</th><th>nombre_calle</th>
+            <th>numero_calle</th><th>ciudad/estado/provincia</th><th>país</th>
+          </tr></thead>
+          <tbody id="dirTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- GEOREFS -->
+    <div class="ipanel" id="ip-georefs">
+      <div class="tbl-wrap tbl-scroll">
+        <table>
+          <thead><tr><th>id</th><th>lugar_id</th><th>latitud</th><th>longitud</th></tr></thead>
+          <tbody id="geoTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VISTA CONSOLIDADA -->
+    <div class="ipanel" id="ip-vista">
+      <div class="tbl-filter"><input type="text" placeholder="Filtrar lugar…" oninput="filterTable('vistaTbody','vistaFilter',this.value)"></div>
+      <div class="tbl-wrap tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>id</th><th>nombre</th><th>número</th><th>calle</th>
+            <th>ciudad/estado</th><th>país</th><th>latitud</th><th>longitud</th>
+          </tr></thead>
+          <tbody id="vistaTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATOS EMBEBIDOS
+// ═══════════════════════════════════════════════════════════════
+const DATA_FAMOSOS_DEFAULT = `1. William Shakespeare - 1564/04/23
+2. Albert Einstein - 1879-03-14
+3. Cleopatra - alrededor del 69 a.C.
+4. Nelson Mandela - 1918-07-18
+5. Isaac Newton - 1642/12/25
+6. Leonardo da Vinci - 1452/04/15
+7. Mahatma Gandhi - 1869-10-02
+8. Alexander Graham Bell - 1847/03/03
+9. Marie Curie - 1867-11-07
+10. Martin Luther King Jr. - 1929/01/15
+11. George Washington - 1732/02/22
+12. Queen Elizabeth II - 1926-04-21
+13. Napoleon Bonaparte - 1769/08/15
+14. Galileo Galilei - 1564/02/15
+15. Beethoven - 1770-12-17
+16. Winston Churchill - 1874/11/30
+17. Joan of Arc - 1412/01/06
+18. Pablo Picasso - 1881-10-25
+19. Sigmund Freud - 1856/05/06
+20. Ernest Hemingway - 1899-07-21
+21. Amelia Earhart - 1897/07/24
+22. Vincent van Gogh - 1853-03-30
+23. Michelangelo - 1475/03/06
+24. Charles Darwin - 1809/02/12
+25. Abraham Lincoln - 1809-02-12
+26. Anne Frank - 1929/06/12
+27. Mozart - 1756/01/27
+28. William the Conqueror - alrededor de 1028
+29. Coco Chanel - 1883-08-19
+30. Queen Victoria - 1819/05/24
+31. Rosa Parks - 1913/02/04
+32. Julius Caesar - 100 a.C./07/12
+33. John F. Kennedy - 1917/05/29
+34. Frida Kahlo - 1907-07-06
+35. Isaac Asimov - 1920/01/02
+36. Alexander the Great - 356 a.C./07/20
+37. Edgar Allan Poe - 1809/01/19
+38. Genghis Khan - alrededor de 1162
+39. Joan Miró - 1893-04-20
+40. Augustus - 63 a.C./09/23
+41. Jane Austen - 1775/12/16
+42. Neil Armstrong - 1930/08/05
+43. Christopher Columbus - 1451-10-31
+44. Mother Teresa - 1910-08-26
+45. Che Guevara - 1928/06/14
+46. Queen Cleopatra VII - alrededor del 69 a.C.
+47. Ernest Shackleton - 1874/02/15
+48. Queen Isabella I of Castile - 1451/04/22
+49. Benjamin Franklin - 1706/01/17
+50. Theodore Roosevelt - 1858/10/27
+51. Joan Baez - 1941/01/09
+52. William Faulkner - 1897-09-25
+53. Emily Dickinson - 1830/12/10
+54. Leo Tolstoy - 1828/09/09
+55. Queen Elizabeth I - 1533/09/07
+56. Amelia Earhart - 24-07-1897
+57. Neil Armstrong - 1930/08/05
+58. Elvis Presley - 1935/01/08
+59. Michael Jackson - 1958/08/29
+60. Steve Jobs - 1955/02/24
+61. Marilyn Monroe - 1926/06/01
+62. Vincent van Gogh - 1853/03/30
+63. Coco Chanel - 19-08-1883
+64. Leonardo da Vinci - 1452/04/15
+65. John Lennon - 1940-10-09
+66. Pablo Picasso - 25/10/1881
+67. Albert Einstein - 1879/03/14
+68. Isaac Newton - 1642-12-25
+69. Mahatma Gandhi - 02-10-1869
+70. Martin Luther King Jr. - 15/01/1929
+71. Queen Elizabeth II - 1926/04/21
+72. Napoleon Bonaparte - 15/08/1769
+73. George Washington - 1732/02/22
+74. Cleopatra - alrededor del 69 a.C.
+75. Winston Churchill - 30-11-1874
+76. Anne Frank - 12/06/1929
+77. Beethoven - 17/12/1770
+78. Joan of Arc - 06/01/1412
+79. Alexander Graham Bell - 03/03/1847
+80. Marie Curie - 07/11/1867
+81. William Shakespeare - 23/04/1564
+82. Vincent van Gogh - 30/03/1853
+83. Galileo Galilei - 15/02/1564
+84. Marie Curie - 1867-11-07
+85. Albert Einstein - 1879/03/14
+86. Leonardo da Vinci - 1452/04/15
+87. Cleopatra - alrededor del 69 a.C.
+88. Mahatma Gandhi - 1869-10-02
+89. Alexander Graham Bell - 03/03/1847
+90. Isaac Newton - 1642-12-25
+91. Martin Luther King Jr. - 15/01/1929
+92. George Washington - 1732/02/22
+93. Queen Elizabeth II - 1926-04-21
+94. Napoleon Bonaparte - 15/08/1769
+95. Winston Churchill - 1874/11/30
+96. Anne Frank - 12/06/1929
+97. Beethoven - 17/12/1770`;
+
+const DATA_LUGARES_DEFAULT = `Nombre del lugar;Dirección Completa;Georeferencia
+Googleplex;1600 Amphitheatre Parkway, Mountain View, CA 94043, USA;37.422, -122.084
+Apple Park;1 Apple Park Way, Cupertino, CA 95014, USA;37.3328, -122.0059
+The White House;1600 Pennsylvania Ave NW, Washington, DC 20500, USA;38.8977, -77.0365
+10 Downing Street;10 Downing St, Westminster, London SW1A 2AA, UK;51.5034, -0.1276
+Eiffel Tower;Champ de Mars, 5 Avenue Anatole France, 75007 Paris, France;48.8584, 2.2945
+Apple Park;1 Infinite Loop, Cupertino, CA 95014, USA;37.3317, -122.0307
+Buckingham Palace;Westminster, London SW1A 1AA, UK;51.5014, -0.1419
+Statue of Liberty;Liberty Island, New York, NY 10004, USA;40.6892, -74.0445
+Vatican City;Vatican;41.9029, 12.4534
+Shibuya Crossing;2 Chome-2-1 Dogenzaka, Shibuya City, Tokyo 150-0043, Japan;35.6591, 139.7005
+221B Baker Street;221B Baker St, Marylebone, London NW1 6XE, UK;51.5238, -0.1588
+Great Wall of China;Beijing, China;40.4319, 116.5704
+Sydney Opera House;Sydney NSW 2000, Australia;-33.8568, 151.2153
+CN Tower;301 Front St W, Toronto, ON M5V 2T6, Canada;43.6426, -79.3871
+Burj Khalifa;1 Sheikh Mohammed bin Rashid Blvd, Dubai, UAE;25.1972, 55.2744
+Christ the Redeemer;Rio de Janeiro - RJ, Brazil;-22.9519, -43.2106
+Colosseum;Piazza del Colosseo, 1, 00184 Roma RM, Italy;41.8902, 12.4922
+Taj Mahal;Dharmapuri, Forest Colony, Tajganj, Agra, Uttar Pradesh 282001, India;27.1751, 78.0421
+Grand Canyon National Park;Arizona, USA;36.107, -112.113
+Leaning Tower of Pisa;Piazza del Duomo, 56126 Pisa PI, Italy;43.7229, 10.3966
+Acropolis of Athens;Athens 105 58, Greece;37.9715, 23.7266
+Machu Picchu;Aguas Calientes 08680, Peru;-13.1631, -72.5450
+Hollywood Walk of Fame;Hollywood, Los Angeles, CA 90028, USA;34.1016, -118.3414
+Niagara Falls;Niagara Falls, NY, USA;43.0812, -79.0663
+Mount Everest;Everest Base Camp, Nepal;27.9881, 86.9250
+Petra;Wadi Musa, Jordan;30.3285, 35.4444
+Machu Picchu;Machu Picchu 08680, Peru;-13.1631, -72.5450
+Golden Gate Bridge;Golden Gate Bridge, San Francisco, CA, USA;37.8199, -122.4783
+Times Square;Manhattan, NY 10036, USA;40.7580, -73.9855
+Amazon Rainforest;Amazon Rainforest, South America;-3.4653, -62.2159
+Mount Rushmore;Keystone, SD 57751, USA;43.8791, -103.4591
+Red Square;Moscow, Russia;55.7539, 37.6208
+Edinburgh Castle;Castlehill, Edinburgh EH1 2NG, UK;55.9486, -3.1999
+Sydney Harbour Bridge;Sydney NSW, Australia;-33.8523, 151.2108
+Big Ben;Westminster, London SW1A 0AA, UK;51.5007, -0.1246
+Pyramids of Giza;Al Haram, Nazlet El-Semman, Al Haram, Giza Governorate, Egypt;29.9792, 31.1342
+Yellowstone National Park;Yellowstone National Park, WY 82190, USA;44.4279, -110.5885
+Hollywood Sign;Los Angeles, CA 90068, USA;34.1341, -118.3215
+Louvre Museum;Rue de Rivoli, 75001 Paris, France;48.8606, 2.3376
+Mount Fuji;Kitayama, Fujinomiya, Shizuoka 418-0112, Japan;35.3606, 138.7274
+Kremlin;Moscow, Russia;55.7517, 37.6178
+Buckingham Palace Gardens;Buckingham Palace Road, London SW1A 1AA, UK;51.5014, -0.1419
+Vatican Museums;Viale Vaticano, 00165 Roma RM, Italy;41.9062, 12.4544
+Golden Gate Park;San Francisco, CA, USA;37.7694, -122.4862
+Brandenburg Gate;Pariser Platz, 10117 Berlin, Germany;52.5163, 13.3777
+Mount Kilimanjaro;Kilimanjaro, Tanzania;-3.0674, 37.3556
+The Louvre Pyramid;Rue de Rivoli, 75001 Paris, France;48.8606, 2.3376
+Lake Titicaca;Lake Titicaca;-15.9254, -69.3356
+Stonehenge;Salisbury SP4 7DE, UK;51.1789, -1.8262
+Chichen Itza;Yucatan, Mexico;20.6843, -88.5678
+Machu Picchu;Cusco 08002, Peru;-13.1631, -72.5450
+Easter Island;Easter Island, Valparaiso Region, Chile;-27.1212, -109.3665
+The Great Barrier Reef;Great Barrier Reef, Queensland, Australia;-18.2871, 147.6992
+Yosemite National Park;Yosemite National Park, CA, USA;37.8651, -119.5383
+Grand Canyon;Grand Canyon National Park, Arizona, USA;36.1069, -112.1129
+Mount Vesuvius;80044 Ottaviano, Metropolitan City of Naples, Italy;40.8219, 14.4283
+Alcatraz Island;San Francisco, CA, USA;37.8267, -122.4233
+Neuschwanstein Castle;Neuschwansteinstrasse 20, 87645 Schwangau, Germany;47.5576, 10.7498
+Angkor Wat;Angkor Archaeological Park, Krong Siem Reap, Cambodia;13.4125, 103.8660
+Statue of Liberty;Liberty Island, New York, NY 10004, USA;40.6892, -74.0445
+Mount Rushmore;Keystone, SD 57751, USA;43.8791, -103.4591
+Yellowstone National Park;Yellowstone National Park, WY 82190, USA;44.4279, -110.5885
+Stonehenge;Salisbury SP4 7DE, UK;51.1789, -1.8262
+The Great Wall of China;Beijing, China;40.4319, 116.5704
+Buckingham Palace;Westminster, London SW1A 1AA, UK;51.5014, -0.1419
+Machu Picchu;Machu Picchu 08680, Peru;-13.1631, -72.5450
+Sydney Opera House;Sydney NSW 2000, Australia;-33.8568, 151.2153
+Mount Everest;Everest Base Camp, Nepal;27.9881, 86.9250
+Christ the Redeemer;Rio de Janeiro - RJ, Brazil;-22.9519, -43.2106
+Taj Mahal;Dharmapuri, Forest Colony, Tajganj, Agra, Uttar Pradesh 282001, India;27.1751, 78.0421
+Eiffel Tower;Champ de Mars, 5 Avenue Anatole France, 75007 Paris, France;48.8584, 2.2945
+Burj Khalifa;1 Sheikh Mohammed bin Rashid Blvd, Dubai, UAE;25.1972, 55.2744
+Colosseum;Piazza del Colosseo, 1, 00184 Roma RM, Italy;41.8902, 12.4922
+Grand Canyon;Grand Canyon National Park, Arizona, USA;36.107, -112.113
+Niagara Falls;Niagara Falls, NY, USA;43.0812, -79.0663
+Great Barrier Reef;Great Barrier Reef, Queensland, Australia;-18.2871, 147.6992
+Angkor Wat;Angkor Archaeological Park, Krong Siem Reap, Cambodia;13.4125, 103.8660
+Machu Picchu;Cusco 08002, Peru;-13.1631, -72.5450
+Hollywood Sign;Los Angeles, CA 90068, USA;34.1341, -118.3215
+Vatican City;Vatican;41.9029, 12.4534
+Big Ben;Westminster, London SW1A 0AA, UK;51.5007, -0.1246
+Louvre Museum;Rue de Rivoli, 75001 Paris, France;48.8606, 2.3376
+Kremlin;Moscow, Russia;55.7517, 37.6178
+Amazon Rainforest;Amazon Rainforest, South America;-3.4653, -62.2159
+Leaning Tower of Pisa;Piazza del Duomo, 56126 Pisa PI, Italy;43.7229, 10.3966
+Mount Fuji;Kitayama, Fujinomiya, Shizuoka 418-0112, Japan;35.3606, 138.7274
+Chichen Itza;Yucatan, Mexico;20.6843, -88.5678
+Alcatraz Island;San Francisco, CA, USA;37.8267, -122.4233
+Neuschwanstein Castle;Neuschwansteinstrasse 20, 87645 Schwangau, Germany;47.5576, 10.7498`;
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const TODAY = new Date();
+let customFamosos = null;
+let customLugares = null;
+
+// In-memory "tables" (simulating SQLite)
+let tFamosos = [];    // {id, nombre, fecha_nacimiento, edad, cumple_hoy}
+let tLugares = [];    // {id, nombre}
+let tDirecciones = []; // {id, lugar_id, nombre_calle, numero_calle, ciudad_estado_provincia, pais}
+let tGeoref = [];     // {id, lugar_id, latitud, longitud}
+
+// Filter state
+const filterState = {};
+
+// Terminal
+function tLog(msg, cls='') {
+  const t = document.getElementById('terminal');
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  t.appendChild(span);
+  t.scrollTop = t.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ETL — PARTE I: FAMOSOS  (port exacto del Python)
+// ═══════════════════════════════════════════════════════════════
+
+function parsearFecha(textoFecha) {
+  const texto = textoFecha.trim();
+
+  // alrededor del/de N a.C.
+  let m = texto.match(/alrededor del?\s+(\d+)\s*a\.?\s*[Cc]\.?/i);
+  if (m) return {dia:null, mes:null, anio:parseInt(m[1]), esAC:true,  esAproximado:true};
+
+  // alrededor de N (AD)
+  m = texto.match(/alrededor de\s+(\d+)\s*$/i);
+  if (m) return {dia:null, mes:null, anio:parseInt(m[1]), esAC:false, esAproximado:true};
+
+  // N a.C./MM/DD
+  m = texto.match(/^(\d+)\s*a\.?\s*[Cc]\.?[\/\-](\d{1,2})[\/\-](\d{1,2})\s*$/i);
+  if (m) return {dia:parseInt(m[3]), mes:parseInt(m[2]), anio:parseInt(m[1]), esAC:true, esAproximado:false};
+
+  // YYYY/MM/DD  o  YYYY-MM-DD
+  m = texto.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s*$/);
+  if (m) return {dia:parseInt(m[3]), mes:parseInt(m[2]), anio:parseInt(m[1]), esAC:false, esAproximado:false};
+
+  // DD/MM/YYYY  o  DD-MM-YYYY
+  m = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s*$/);
+  if (m) return {dia:parseInt(m[1]), mes:parseInt(m[2]), anio:parseInt(m[3]), esAC:false, esAproximado:false};
+
+  return null;
+}
+
+function formatearFechaChile(f) {
+  if (!f) return null;
+  if (f.esAproximado) return f.esAC ? `~${f.anio} a.C.` : `~${f.anio}`;
+  const str = `${String(f.dia).padStart(2,'0')}-${String(f.mes).padStart(2,'0')}-${String(f.anio).padStart(4,'0')}`;
+  return f.esAC ? str + ' a.C.' : str;
+}
+
+function calcularEdad(f) {
+  if (!f) return null;
+  if (f.esAC) return TODAY.getFullYear() + f.anio - 1;
+  if (f.esAproximado) return TODAY.getFullYear() - f.anio;
+  let edad = TODAY.getFullYear() - f.anio;
+  if ((f.mes > TODAY.getMonth()+1) || (f.mes === TODAY.getMonth()+1 && f.dia > TODAY.getDate())) edad--;
+  return edad;
+}
+
+function esCumpleaniosHoy(f) {
+  if (!f || f.dia === null) return 0;
+  return (f.mes === TODAY.getMonth()+1 && f.dia === TODAY.getDate()) ? 1 : 0;
+}
+
+function limpiarNombre(nombre) {
+  nombre = nombre.replace(/[;\t"]+/g, ' ');
+  nombre = nombre.replace(/\s+/g, ' ').trim();
+  return nombre;
+}
+
+function procesarFamosos(contenido) {
+  tFamosos = [];
+  const vistos = new Set();
+  let insertados = 0, descartados = 0;
+  let idSeq = 1;
+  const lineas = contenido.split(/\r?\n/);
+
+  for (const linea of lineas) {
+    const l = linea.trim();
+    if (!l) continue;
+    const m = l.match(/^\d+\.\s*(.+?)\s*-\s*(.+)$/);
+    if (!m) { descartados++; tLog(`   SKIP (formato): "${l.slice(0,60)}"`, 't-warn'); continue; }
+    const nombre = limpiarNombre(m[1]);
+    const fechaDict = parsearFecha(m[2]);
+    if (!nombre || !fechaDict) { descartados++; tLog(`   SKIP (fecha no parseable): "${l.slice(0,60)}"`, 't-warn'); continue; }
+    const fechaNorm = formatearFechaChile(fechaDict);
+    const clave = nombre.toLowerCase() + '|' + fechaNorm;
+    if (vistos.has(clave)) { tLog(`   DUP: ${nombre} — ${fechaNorm}`, 't-dim'); continue; }
+    vistos.add(clave);
+    const edad = calcularEdad(fechaDict);
+    const cumple = esCumpleaniosHoy(fechaDict);
+    tFamosos.push({id:idSeq++, nombre, fecha_nacimiento:fechaNorm, edad, cumple_hoy:cumple});
+    tLog(`   ✓ ${nombre.padEnd(32,' ')} | ${fechaNorm} | edad=${edad}${cumple?' 🎂':''}`, cumple?'t-pur':'t-ok');
+    insertados++;
+  }
+  return {insertados, descartados};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ETL — PARTE II: LUGARES  (port exacto del Python)
+// ═══════════════════════════════════════════════════════════════
+
+const INDICADORES_CALLE = new Set([
+  'st','st.','street','rd','rd.','road','ave','ave.','avenue',
+  'blvd','blvd.','boulevard','way','lane','ln','ln.','drive',
+  'dr','dr.','court','ct','plaza','place','pl','pkwy','parkway',
+  'square','sq','loop','circle','cir','highway','hwy',
+  'calle','avenida','av','av.','paseo',
+  'piazza','via','viale','corso','rue',
+  'strasse','straße','platz','allee','weg'
+]);
+const SUFIJOS_CALLE = ['straße','strasse','platz','allee','gasse'];
+
+function tieneIndicadorCalle(texto) {
+  if (!texto) return false;
+  const palabras = texto.toLowerCase().split(/[\s,]+/);
+  for (let p of palabras) {
+    p = p.replace(/[.,;]+$/, '');
+    if (!p) continue;
+    if (INDICADORES_CALLE.has(p)) return true;
+    if (SUFIJOS_CALLE.some(s => p.endsWith(s))) return true;
+  }
+  return false;
+}
+
+function parsearDireccion(direccionCompleta) {
+  const direccion = direccionCompleta.trim();
+  const empty = {nombre_calle:null, numero_calle:null, ciudad_estado_provincia:null, pais:null};
+  if (!direccion) return empty;
+  if (!direccion.includes(',')) return {...empty, pais:direccion};
+  const partes = direccion.split(',').map(p=>p.trim()).filter(p=>p);
+  const pais = partes[partes.length-1];
+  if (partes.length===1) return {...empty, pais};
+  if (partes.length===2) return {...empty, ciudad_estado_provincia:partes[0], pais};
+  const primer = partes[0];
+  // "123 Street Name"
+  let m = primer.match(/^(\d+[A-Za-z]?)\s+(.+)$/);
+  if (m) return {nombre_calle:m[2], numero_calle:m[1], ciudad_estado_provincia:partes.slice(1,-1).join(', ')||null, pais};
+  // "Street Name, 123"
+  if (partes.length>=4 && partes[1].match(/^\d+[A-Za-z]?$/)) {
+    return {nombre_calle:primer, numero_calle:partes[1], ciudad_estado_provincia:partes.slice(2,-1).join(', ')||null, pais};
+  }
+  // partes[1] contiene número
+  if (partes.length>=4) {
+    m = partes[1].match(/^(\d+[A-Za-z]?)\s+(.+)$/);
+    if (m) {
+      const otros = [primer,...partes.slice(2,-1)];
+      return {nombre_calle:m[2], numero_calle:m[1], ciudad_estado_provincia:otros.join(', ')||null, pais};
+    }
+  }
+  // primer tiene indicador de calle
+  if (tieneIndicadorCalle(primer)) {
+    const m2 = primer.match(/^(.+?)\s+(\d+[A-Za-z]?)$/);
+    if (m2 && tieneIndicadorCalle(m2[1])) {
+      return {nombre_calle:m2[1], numero_calle:m2[2], ciudad_estado_provincia:partes.slice(1,-1).join(', ')||null, pais};
+    }
+    return {nombre_calle:primer, numero_calle:null, ciudad_estado_provincia:partes.slice(1,-1).join(', ')||null, pais};
+  }
+  return {...empty, ciudad_estado_provincia:partes.slice(0,-1).join(', ')||null, pais};
+}
+
+function parsearGeoref(texto) {
+  const m = texto.trim().match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
+  if (m) return [parseFloat(m[1]), parseFloat(m[2])];
+  return [null, null];
+}
+
+function procesarLugares(contenido) {
+  tLugares = []; tDirecciones = []; tGeoref = [];
+  const vistos = new Set();
+  let insertados = 0, descartados = 0;
+  let lugId=1, dirId=1, geoId=1;
+  let cabeceraSaltada = false;
+  const lineas = contenido.split(/\r?\n/);
+
+  for (const linea of lineas) {
+    const l = linea.trim();
+    if (!l) continue;
+    if (!cabeceraSaltada && l.includes('Nombre') && (l.includes('Direcci') || l.includes('Direccion'))) {
+      cabeceraSaltada = true; continue;
+    }
+    cabeceraSaltada = true;
+    const partes = l.split(';');
+    if (partes.length!==3) { descartados++; continue; }
+    const [nombre, direccion, georef] = partes.map(p=>p.trim());
+    if (!nombre||!direccion) { descartados++; continue; }
+    const [lat, lng] = parsearGeoref(georef);
+    const georefHuella = lat!==null ? `${Math.round(lat*1000)/1000},${Math.round(lng*1000)/1000}` : georef;
+    const huella = nombre.toLowerCase()+'|'+direccion.toLowerCase()+'|'+georefHuella;
+    if (vistos.has(huella)) { tLog(`   DUP lugar: ${nombre}`, 't-dim'); continue; }
+    vistos.add(huella);
+    // Buscar lugar existente por nombre
+    let existente = tLugares.find(l=>l.nombre===nombre);
+    let id;
+    if (existente) { id=existente.id; }
+    else { id=lugId++; tLugares.push({id, nombre}); }
+    const comp = parsearDireccion(direccion);
+    tDirecciones.push({id:dirId++, lugar_id:id, ...comp});
+    tGeoref.push({id:geoId++, lugar_id:id, latitud:lat, longitud:lng});
+    tLog(`   ✓ [${String(id).padStart(2,'0')}] ${nombre.padEnd(30,' ')} | (${lat}, ${lng})`, 't-ok');
+    insertados++;
+  }
+  return {insertados, descartados};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER TABLES
+// ═══════════════════════════════════════════════════════════════
+
+function renderFamosos(data) {
+  filterState.fam = data;
+  const tbody = document.getElementById('famTbody');
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="5" class="empty">Sin registros</td></tr>'; return; }
+  tbody.innerHTML = data.map(f => `
+    <tr>
+      <td class="td-id">${f.id}</td>
+      <td><strong>${f.nombre}</strong></td>
+      <td class="td-mono">${f.fecha_nacimiento}</td>
+      <td class="td-mono">${f.edad??'?'}</td>
+      <td>${f.cumple_hoy ? '<span class="badge b-pur">🎂 Sí</span>' : '<span class="badge" style="color:var(--tx3)">—</span>'}</td>
+    </tr>`).join('');
+}
+
+function renderLugares(data) {
+  filterState.lug = data;
+  const tbody = document.getElementById('lugTbody');
+  tbody.innerHTML = data.map(l=>`<tr><td class="td-id">${l.id}</td><td><strong>${l.nombre}</strong></td></tr>`).join('');
+}
+
+function renderDirecciones() {
+  const tbody = document.getElementById('dirTbody');
+  tbody.innerHTML = tDirecciones.map(d=>`
+    <tr>
+      <td class="td-id">${d.id}</td>
+      <td class="td-mono">${d.lugar_id}</td>
+      <td>${d.nombre_calle??'<span style="color:var(--tx3)">NULL</span>'}</td>
+      <td class="td-mono">${d.numero_calle??'<span style="color:var(--tx3)">NULL</span>'}</td>
+      <td>${d.ciudad_estado_provincia??'<span style="color:var(--tx3)">NULL</span>'}</td>
+      <td><strong>${d.pais??'<span style="color:var(--tx3)">NULL</span>'}</strong></td>
+    </tr>`).join('');
+}
+
+function renderGeoref() {
+  const tbody = document.getElementById('geoTbody');
+  tbody.innerHTML = tGeoref.map(g=>`
+    <tr>
+      <td class="td-id">${g.id}</td>
+      <td class="td-mono">${g.lugar_id}</td>
+      <td class="td-mono">${g.latitud??'NULL'}</td>
+      <td class="td-mono">${g.longitud??'NULL'}</td>
+    </tr>`).join('');
+}
+
+function renderVista() {
+  const rows = tLugares.map(l=>{
+    const dir = tDirecciones.find(d=>d.lugar_id===l.id)||{};
+    const geo = tGeoref.find(g=>g.lugar_id===l.id)||{};
+    return {...l, ...dir, latitud:geo.latitud, longitud:geo.longitud};
+  });
+  filterState.vista = rows;
+  const tbody = document.getElementById('vistaTbody');
+  tbody.innerHTML = rows.map(r=>`
+    <tr>
+      <td class="td-id">${r.id}</td>
+      <td><strong>${r.nombre}</strong></td>
+      <td class="td-mono">${r.numero_calle??'—'}</td>
+      <td>${r.nombre_calle??'—'}</td>
+      <td>${r.ciudad_estado_provincia??'—'}</td>
+      <td><strong>${r.pais??'—'}</strong></td>
+      <td class="td-mono" style="font-size:10px">${r.latitud??'—'}</td>
+      <td class="td-mono" style="font-size:10px">${r.longitud??'—'}</td>
+    </tr>`).join('');
+}
+
+function filterTable(tbodyId, stateKey, q) {
+  const k = q.toLowerCase();
+  const all = filterState[stateKey] || [];
+  // For famosos
+  if (tbodyId==='famTbody') {
+    const filtered = all.filter(f=>f.nombre.toLowerCase().includes(k)||f.fecha_nacimiento.toLowerCase().includes(k));
+    const tbody = document.getElementById(tbodyId);
+    if (!filtered.length){tbody.innerHTML='<tr><td colspan="5" class="empty">Sin resultados</td></tr>';return;}
+    tbody.innerHTML=filtered.map(f=>`<tr>
+      <td class="td-id">${f.id}</td><td><strong>${f.nombre}</strong></td>
+      <td class="td-mono">${f.fecha_nacimiento}</td><td class="td-mono">${f.edad??'?'}</td>
+      <td>${f.cumple_hoy?'<span class="badge b-pur">🎂 Sí</span>':'<span class="badge" style="color:var(--tx3)">—</span>'}</td>
+    </tr>`).join('');
+  }
+  // For lugares
+  if (tbodyId==='lugTbody') {
+    const filtered=all.filter(l=>l.nombre.toLowerCase().includes(k));
+    document.getElementById(tbodyId).innerHTML=filtered.map(l=>`<tr><td class="td-id">${l.id}</td><td><strong>${l.nombre}</strong></td></tr>`).join('');
+  }
+  // Vista consolidada
+  if (tbodyId==='vistaTbody') {
+    const filtered=all.filter(r=>r.nombre.toLowerCase().includes(k)||(r.pais&&r.pais.toLowerCase().includes(k)));
+    const tbody=document.getElementById(tbodyId);
+    tbody.innerHTML=filtered.map(r=>`<tr>
+      <td class="td-id">${r.id}</td><td><strong>${r.nombre}</strong></td>
+      <td class="td-mono">${r.numero_calle??'—'}</td><td>${r.nombre_calle??'—'}</td>
+      <td>${r.ciudad_estado_provincia??'—'}</td><td><strong>${r.pais??'—'}</strong></td>
+      <td class="td-mono" style="font-size:10px">${r.latitud??'—'}</td>
+      <td class="td-mono" style="font-size:10px">${r.longitud??'—'}</td>
+    </tr>`).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN ETL RUNNER
+// ═══════════════════════════════════════════════════════════════
+function runETL() {
+  const term = document.getElementById('terminal');
+  term.innerHTML = '';
+  document.getElementById('etlStatus').textContent='EJECUTANDO…';
+  document.getElementById('etlStatus').className='badge b-warn';
+
+  const sep = '─'.repeat(58);
+  const tsNow = TODAY.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  tLog(`Fecha de ejecución: ${tsNow}`, 't-head');
+  tLog(sep, 't-sep');
+
+  // PARTE I
+  tLog('\n[PARTE I] Procesando Famosos…', 't-info');
+  const famData = customFamosos !== null ? customFamosos : DATA_FAMOSOS_DEFAULT;
+  const {insertados:famIns, descartados:famDesc} = procesarFamosos(famData);
+  tLog(`   → Insertados: ${famIns}   Descartados: ${famDesc}`, 't-head');
+
+  // PARTE II
+  tLog('\n[PARTE II] Procesando Lugares…', 't-info');
+  const lugData = customLugares !== null ? customLugares : DATA_LUGARES_DEFAULT;
+  const {insertados:lugIns, descartados:lugDesc} = procesarLugares(lugData);
+  tLog(`   → Insertados: ${lugIns}   Descartados: ${lugDesc}`, 't-head');
+
+  // REPORTE
+  tLog('\n' + sep, 't-sep');
+  tLog('REPORTE DE CARGA', 't-head');
+  tLog(sep, 't-sep');
+  tLog(`Famosos cargados: ${tFamosos.length}`, 't-ok');
+  const cumpleaneros = tFamosos.filter(f=>f.cumple_hoy===1);
+  const fechaHoyStr = `${String(TODAY.getDate()).padStart(2,'0')}-${String(TODAY.getMonth()+1).padStart(2,'0')}`;
+  if (cumpleaneros.length) {
+    tLog(`Cumpleaños hoy (${fechaHoyStr}):`, 't-pur');
+    cumpleaneros.forEach(c=>tLog(`   • ${c.nombre} — ${c.fecha_nacimiento}`, 't-pur'));
+  } else {
+    tLog(`Nadie cumple años hoy (${fechaHoyStr}).`, 't-dim');
+  }
+  tLog('\nMuestra de Famosos (5):', 't-info');
+  tFamosos.slice(0,5).forEach(f=>tLog(`   ${f.nombre.padEnd(32,' ')} | ${String(f.fecha_nacimiento).padEnd(18,' ')} | edad=${f.edad} | cumple_hoy=${f.cumple_hoy}`,'t-dim'));
+  tLog(`\nLugares únicos: ${tLugares.length}`, 't-ok');
+  tLog(`Direcciones: ${tDirecciones.length}`, 't-ok');
+  tLog(`Georeferencias: ${tGeoref.length}`, 't-ok');
+  tLog('\nMuestra de Lugares (5):', 't-info');
+  tLugares.slice(0,5).forEach(l=>{
+    const d=tDirecciones.find(x=>x.lugar_id===l.id)||{};
+    const g=tGeoref.find(x=>x.lugar_id===l.id)||{};
+    const dirParts=[d.numero_calle,d.nombre_calle,d.ciudad_estado_provincia,d.pais].filter(Boolean);
+    tLog(`   ${l.nombre.padEnd(30,' ')} | ${dirParts.join(', ')} | (${g.latitud}, ${g.longitud})`, 't-dim');
+  });
+  tLog(sep, 't-sep');
+  tLog(`\nListo. Tablas generadas en memoria.`, 't-ok');
+
+  // UPDATE STATS
+  document.getElementById('rs-famTotal').textContent = famData.split('\n').filter(l=>/^\d+\./.test(l.trim())).length;
+  document.getElementById('rs-famInsert').textContent = tFamosos.length;
+  document.getElementById('rs-famDesc').textContent = famDesc;
+  document.getElementById('rs-cumple').textContent = cumpleaneros.length;
+  document.getElementById('rs-lugares').textContent = tLugares.length;
+  document.getElementById('rs-dirs').textContent = tDirecciones.length;
+  document.getElementById('rs-georefs').textContent = tGeoref.length;
+
+  // Birthday box
+  const cb = document.getElementById('cumpleBox');
+  const cl = document.getElementById('cumpleList');
+  if (cumpleaneros.length) {
+    cb.style.display='block';
+    cl.innerHTML=cumpleaneros.map(c=>`<div style="font-size:12px;margin:3px 0"><span class="badge b-pur">🎂</span> <strong>${c.nombre}</strong> — <span class="td-mono" style="font-size:11px">${c.fecha_nacimiento}</span></div>`).join('');
+  } else { cb.style.display='none'; }
+
+  // RENDER TABLES
+  renderFamosos(tFamosos);
+  renderLugares(tLugares);
+  renderDirecciones();
+  renderGeoref();
+  renderVista();
+
+  document.getElementById('etlStatus').textContent='COMPLETADO';
+  document.getElementById('etlStatus').className='badge b-ok';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════════════════════════
+function loadCustomFile(tipo, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    if (tipo==='famosos') {
+      customFamosos = e.target.result;
+      document.getElementById('uz1name').textContent = '✓ ' + file.name;
+    } else {
+      customLugares = e.target.result;
+      document.getElementById('uz2name').textContent = '✓ ' + file.name;
+    }
+    runETL();
+  };
+  // Try UTF-8, fallback latin1
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT JSON
+// ═══════════════════════════════════════════════════════════════
+function exportDB() {
+  const db = {
+    Famosos: tFamosos,
+    Lugares: tLugares,
+    Direcciones: tDirecciones,
+    Georeferencias: tGeoref,
+    exportadoEn: new Date().toISOString()
+  };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));
+  a.download = 'portafolio_db.json';
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════
+function switchITab(tab) {
+  document.querySelectorAll('.itabt').forEach((b,i)=>{
+    b.classList.toggle('on',['famosos','lugares','direcciones','georefs','vista'][i]===tab);
+  });
+  document.querySelectorAll('.ipanel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('ip-'+tab).classList.add('on');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('fechaHoy').textContent =
+  TODAY.toLocaleDateString('es-CL',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+runETL();
+</script>
+</body>
+</html>
